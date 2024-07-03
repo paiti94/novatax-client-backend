@@ -25,7 +25,7 @@ public class TaxReturn {
 	private Integer tax_return_id;
 	
 	@ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "client_id", referencedColumnName = "client_id")
+    @JoinColumn(name = "client_id", referencedColumnName = "id")
     private Clients client;
     
 	@Column(nullable = false)

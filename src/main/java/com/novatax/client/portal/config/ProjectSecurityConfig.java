@@ -17,7 +17,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import java.util.Arrays;
 import java.util.Collections;
 
-
 @Configuration
 public class ProjectSecurityConfig {
 
@@ -30,29 +29,29 @@ public class ProjectSecurityConfig {
 
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .cors(corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
-            @Override
-            public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
-                CorsConfiguration config = new CorsConfiguration();
-                config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
-                config.setAllowedMethods(Collections.singletonList("*"));
-                config.setAllowCredentials(true);
-                config.setAllowedHeaders(Collections.singletonList("*"));
-                config.setExposedHeaders(Arrays.asList("Authorization"));
-                config.setMaxAge(3600L);
-                return config;
-            }
-        })).csrf((csrf) -> csrf.csrfTokenRequestHandler(requestHandler).ignoringRequestMatchers("/contact","/register")
+                @Override
+                public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+                    CorsConfiguration config = new CorsConfiguration();
+                    config.setAllowedOrigins(Collections.singletonList("http://localhost:4200"));
+                    config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+                    config.setAllowCredentials(true);
+                    config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-XSRF-TOKEN"));
+                    config.setExposedHeaders(Arrays.asList("Authorization", "X-XSRF-TOKEN"));
+                    config.setMaxAge(3600L);
+                    return config;
+                }
+            }))
+            .csrf(csrf -> csrf.csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers("/contact", "/register", "/clients/**")
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()))
-                .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-                .authorizeHttpRequests((requests)->requests
-                        .requestMatchers("/users/**").hasAnyRole("USER","ADMIN")
-                        .requestMatchers("/clients/**").hasAnyRole("USER","ADMIN")
-                        .requestMatchers("/home").authenticated()
-                        .requestMatchers("/notices","/contact","/register").permitAll())
-                .oauth2ResourceServer(oauth2ResourceServerCustomizer ->
-                        oauth2ResourceServerCustomizer.jwt(jwtCustomizer -> jwtCustomizer.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+            .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+            .authorizeHttpRequests(requests -> requests
+                .requestMatchers("/clients/**", "/users/**").authenticated()
+                .requestMatchers("/home").authenticated()
+                .requestMatchers("/notices", "/contact", "/register").permitAll()
+                .anyRequest().authenticated())
+            .oauth2ResourceServer(oauth2ResourceServerCustomizer ->
+                oauth2ResourceServerCustomizer.jwt(jwtCustomizer -> jwtCustomizer.jwtAuthenticationConverter(jwtAuthenticationConverter)));
         return http.build();
     }
-
-
 }

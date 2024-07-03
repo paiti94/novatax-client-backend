@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -25,12 +26,16 @@ import org.springframework.security.core.Authentication;
 import com.novatax.client.portal.entities.Tasks;
 import com.novatax.client.portal.entities.Users;
 import com.novatax.client.portal.repository.UserRepository;
+import com.novatax.client.portal.services.UserService;
 
 @RestController
 public class UserController {
 
 	@Autowired
 	UserRepository userRepository;
+	
+	@Autowired
+	UserService userService;
 	
 //	@Autowired
 //	private PasswordEncoder passwordEncoder;
@@ -47,15 +52,39 @@ public class UserController {
                     .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
 	    }
 	    
+	    @GetMapping("/users/findbyemail/{email}")
+	    public List<Users> getUserByEmail(@PathVariable String email) {
+	    	return userRepository.findByEmail(email).stream().collect(Collectors.toList());
+	    }
+	    
+	    
 	    @GetMapping("/users")
 	    public List<Users> getTaskDetails(@RequestParam String email) {
-	    	List<Users> users = userRepository.findByEmail(email);
+	    	List<Users> users = userRepository.findByEmail(email).stream().collect(Collectors.toList());
 	    	if(users != null && !users.isEmpty()) {
 	    		return users;
 	    	}
 	    	return null;
 	    }
-
+	    
+	    @GetMapping("/users/admins")
+	    public ResponseEntity<List<Users>> getAllAdminUsers() {
+	        List<Users> adminUsers = userService.getAllAdminUsers();
+	        return ResponseEntity.ok(adminUsers);
+	    }
+	    
+	    
+	    @GetMapping("/users/findbyusername/{username}")
+	    public List<Users> getUserByUsername(@PathVariable String username) {
+	        Optional<Users> optionalUser = userRepository.findByUsername(username);
+	        return optionalUser.stream().collect(Collectors.toList());
+	    }
+	    
+	    @GetMapping("/users/map")
+	    public String mapUserWithClient() {
+	    	this.userService.fetchUsers();
+	    	return "mapping is completed";
+	    }
 
 //	    @PostMapping("/register")
 //	    public ResponseEntity<String> create(@RequestBody Map<String, String> body){

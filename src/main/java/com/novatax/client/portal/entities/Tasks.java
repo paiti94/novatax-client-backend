@@ -1,11 +1,10 @@
 package com.novatax.client.portal.entities;
 
-import java.sql.Date;
+import java.util.Date;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import com.novatax.client.portal.repository.UserRepository;
-
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -14,26 +13,37 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 
 @Entity
+@Table(name = "tasks") 
 public class Tasks {
 	
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Integer task_id;
+	private Integer id;
+
+	@Column(nullable = false)
+	private String name;
 	
 	@Column(nullable = false)
-	private String task_description;
+	private String type; 
 	
+	@Column(nullable = true)
+	private String description;
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "assigned_to", referencedColumnName = "id")
-    private Users assignee;
+    @JoinColumn(name = "client_id", referencedColumnName = "id")
+    @JsonBackReference(value = "client-tasks")
+    private Clients client;
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "assigned_by", referencedColumnName = "id")
-    private Users assigner;
-	
+    
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "job_id", nullable = false)
+    @JsonBackReference(value = "job-tasks")
+    private Job job;
+
+    
 	@Column
 	private Date due_date;
 	
@@ -56,12 +66,10 @@ public class Tasks {
 	public Tasks() {}
 
 
-	public Tasks(String task_description, Users assignee, Users assigner, Date due_date,
+	public Tasks(String task_description, Date due_date,
 			String priority, String status, String notes, Date created_at, Date updated_at) {
 		super();
-		this.task_description = task_description;
-		this.assignee = assignee;
-		this.assigner = assigner;
+		this.description = task_description;
 		this.due_date = due_date;
 		this.priority = priority;
 		this.status = status;
@@ -71,43 +79,33 @@ public class Tasks {
 	}
 
 
-	public Integer getTask_id() {
-		return task_id;
+	public Clients getClient() {
+		return client;
 	}
 
 
-	public void setTask_id(Integer task_id) {
-		this.task_id = task_id;
+	public void setClient(Clients client) {
+		this.client = client;
 	}
 
 
-	public String getTask_description() {
-		return task_description;
+	public Integer getId() {
+		return id;
 	}
 
 
-	public void setTask_description(String task_description) {
-		this.task_description = task_description;
+	public void setId(Integer task_id) {
+		this.id = task_id;
 	}
 
 
-	public Users getAssignee() {
-		return assignee;
+	public String getDescription() {
+		return description;
 	}
 
 
-	public void setAssignee(Users assignee) {
-		this.assignee = assignee;
-	}
-
-
-	public Users getAssigner() {
-		return assigner;
-	}
-
-
-	public void setAssigner(Users assigner) {
-		this.assigner = assigner;
+	public void setDescription(String task_description) {
+		this.description = task_description;
 	}
 
 
@@ -169,6 +167,35 @@ public class Tasks {
 	public void setUpdated_at(Date updated_at) {
 		this.updated_at = updated_at;
 	}
-	
+	public String getName() {
+		return name;
+	}
+
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+
+	public String getType() {
+		return type;
+	}
+
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+
+	public Job getJob() {
+		return job;
+	}
+
+
+	public void setJob(Job job) {
+		this.job = job;
+	}
+
+
 	
 }

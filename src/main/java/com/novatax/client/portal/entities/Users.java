@@ -1,14 +1,21 @@
 package com.novatax.client.portal.entities;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 
 @Entity
@@ -17,7 +24,7 @@ public class Users {
 	  @GeneratedValue(strategy = GenerationType.IDENTITY)
 	  private Integer id;
 	  
-	  @Column(nullable = false)
+	  @Column(nullable = true)
 	  private String password;
 
 	  @Column(nullable = false)
@@ -26,10 +33,10 @@ public class Users {
 	  @Column(nullable = false)
 	  private String email;
 	
-	  @Column(nullable = false)
+	  @Column(nullable = true)
 	  private String contactInfo;
 	
-	  @Column(nullable = false)
+	  @Column(nullable = true)
 	  private int role_id;
 
 	  @Column(nullable = false)
@@ -41,16 +48,28 @@ public class Users {
 	  @Column(nullable = false)
 	  private Date created_at;
 		  
-	  @Column(nullable = false)
+	  @Column(nullable = true)
 	  private Date updated_at;
 		  
 	  @Column(nullable = false)
 	  private boolean is_active;
 	  
-	  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-	    private Clients client;
+	  @Column(nullable = true)
+	  private String roles = "";
 	  
-	  public Integer getId() {
+	  @OneToOne(mappedBy = "user", cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+	  @JsonBackReference
+	  private Clients client;
+
+	  public Clients getClient() {
+		return client;
+	  }
+
+	public void setClient(Clients client) {
+		this.client = client;
+	}
+
+	public Integer getId() {
 		return id;
 	}
 
@@ -61,8 +80,6 @@ public class Users {
 	public String getUsername() {
 		return username;
 	}
-	
-
 	public String getPassword() {
 		return password;
 	}
@@ -154,6 +171,19 @@ public class Users {
 	public void setIs_active(boolean is_active) {
 		this.is_active = is_active;
 	}
+	
+	  public String getRoles() {
+			return roles;
+		}
+
+		public void setRoles(String roles) {
+			this.roles = roles;
+		}
+
+		public void setId(Integer id) {
+			this.id = id;
+		}
+
 
 //	  
 //	   @Override

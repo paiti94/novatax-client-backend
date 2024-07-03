@@ -111,6 +111,11 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+ 		   <groupId>org.keycloak</groupId>
+ 		   <artifactId>keycloak-admin-client</artifactId>
+ 		   <version>21.0.1</version> <!-- Use the latest version available -->
+		</dependency>
 	</dependencies> 
 	<build>
 		<plugins>
