@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.novatax.client.portal.entities.Clients;
 import com.novatax.client.portal.entities.Users;
 import com.novatax.client.portal.repository.ClientRepository;
+import com.novatax.client.portal.repository.FileRepository;
 import com.novatax.client.portal.repository.UserRepository;
 
 import javax.annotation.PostConstruct;
@@ -35,36 +36,47 @@ public class UserService {
     @Autowired
     private ClientRepository clientRepository;
     
+    @Autowired
+    private FileStorageService fileService;
+    
+    @Autowired
+    private FileRepository fileRepository;
+    
     @Transactional
     @PostConstruct
-    public void fetchUsers() {
-        RealmResource realmResource = keycloak.realm("novaclientportal");
-        UsersResource usersResource = realmResource.users();
-        List<UserRepresentation> users = usersResource.list();
-        
-        for (UserRepresentation keycloakUser : users) {
-            Users user = mapToUserEntity(keycloakUser);
-            Optional<Users> existingUserOpt = usersRepository.findByUsername(user.getUsername());
-            
-            if (existingUserOpt.isPresent()) {
-                Users existingUser = existingUserOpt.get();
-                updateUserFields(existingUser, user, keycloakUser);
-                usersRepository.save(existingUser);
-            } else {
-                if (isUserNew(user)) {
-                    Optional<Clients> clientOpt = clientRepository.findByEmail(user.getEmail());
-                    if (clientOpt.isPresent()) {
-                        Clients client = clientOpt.get();
-                        user.setClient(client);
-                        client.setUser(user);
-                        saveUserAndClient(user, client);
-                    } else {
-                        // Handle case where client is not present
-                        saveUserAndClient(user, null);
-                    }
-                }
-            }
-        }
+    public void fetchUsers() throws Exception {
+    	 RealmResource realmResource = keycloak.realm("novaclientportal");
+    	    UsersResource usersResource = realmResource.users();
+    	    List<UserRepresentation> users = usersResource.list();
+    	    
+    	    for (UserRepresentation keycloakUser : users) {
+    	        Users user = mapToUserEntity(keycloakUser);
+    	        Optional<Users> existingUserOpt = usersRepository.findByUsername(user.getUsername());
+    	        
+    	        if (existingUserOpt.isPresent()) {
+    	            Users existingUser = existingUserOpt.get();
+    	            updateUserFields(existingUser, user, keycloakUser);
+    	            usersRepository.save(existingUser);
+
+    	            // Check and create default folders if they do not exist
+    	           // ensureDefaultFoldersExist(existingUser.getClient());
+    	        } else {
+    	            if (isUserNew(user)) {
+    	                Optional<Clients> clientOpt = clientRepository.findByEmail(user.getEmail());
+    	                if (clientOpt.isPresent()) {
+    	                    Clients client = clientOpt.get();
+    	                    user.setClient(client);
+    	                    client.setUser(user);
+    	                    saveUserAndClient(user, client);
+    	                    // Create default folders
+    	                    ensureDefaultFoldersExist(client);
+    	                } else {
+    	                    // Handle case where client is not present
+    	                    saveUserAndClient(user, null);
+    	                }
+    	            }
+    	        }
+    	    }
     }
     
     public List<Users> getAllAdminUsers() {
@@ -78,18 +90,26 @@ public class UserService {
 
     @Transactional
     public void saveUserAndClient(Users user, Clients client) {
-        if (client.getId() != null) {
-            client = clientRepository.findById(client.getId()).orElseThrow();
-        } else {
-            client = clientRepository.save(client); // Save the client to generate the ID
+        if (client != null) {
+            if (client.getId() != null) {
+                client = clientRepository.findById(client.getId()).orElseThrow();
+                client = clientRepository.save(client); 
+            } else {
+                client = clientRepository.save(client); // Save the client to generate the ID
+            }
+            user.setClient(client);
         }
+
         if (user.getId() != null) {
             user = usersRepository.findById(user.getId()).orElseThrow();
         }
+        
         user.setClient(client);
-        client.setUser(user);
         usersRepository.save(user); // Save the user which references the client
-        clientRepository.save(client); // Save the client to update the user reference
+        if (client != null) {
+            client.setUser(user);
+            clientRepository.save(client); // Save the client to update the user reference
+        }
     }
     
 
@@ -155,4 +175,20 @@ public class UserService {
         }
         // Add other fields that need to be updated
     }
+    
+    private void ensureDefaultFoldersExist(Clients client) throws Exception {
+        boolean sharedFolderExists = fileRepository.existsByClientIdAndGuiLocation(client.getId(), "/shared");
+        boolean internalFolderExists = fileRepository.existsByClientIdAndGuiLocation(client.getId(), "/internal");
+
+        if (!sharedFolderExists) {
+            fileService.storeFolder("Client Shared Folder", null, client.getId(), "/shared", null);
+        }
+
+        if (!internalFolderExists) {
+            fileService.storeFolder("Internal Folder", null, client.getId(), "/internal", null);
+        }
+    }
+    
+    
+    
 }

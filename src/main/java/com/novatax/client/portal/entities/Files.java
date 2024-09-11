@@ -1,7 +1,10 @@
 	package com.novatax.client.portal.entities;
 	
 	import java.util.Date;
-	import jakarta.persistence.*;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import jakarta.persistence.*;
 	
 	@Entity
 	public class Files {
@@ -13,17 +16,33 @@
 		    private String fileName;
 		    private String fileType;
 		    private String fileLocation;
+		    private String guiLocation;
 	
 		    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 		    @JoinColumn(name = "job_id", nullable = true)
+		    @JsonIgnore
 		    private Job job;
 	
 		    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
 		    @JoinColumn(name = "client_id", nullable = false)
+		    @JsonIgnore
 		    private Clients client;
 	
 		    private Date uploaded_at;
 		    
+		    @ManyToOne(fetch = FetchType.LAZY)
+		    @JoinColumn(name = "parent_id", nullable = true)
+		    private Files parent;
+
+		    
+			public Files getParent() {
+				return parent;
+			}
+
+			public void setParent(Files parent) {
+				this.parent = parent;
+			}
+
 			public Integer getId() {
 				return id;
 			}
@@ -80,15 +99,27 @@
 				this.uploaded_at = uploaded_at;
 			}
 	
-			public Files(String fileName, String fileType, String fileLocation, Job job, Clients client,
+			public String getGuiLocation() {
+				return guiLocation;
+			}
+
+			public void setGuiLocation(String guiLocation) {
+				this.guiLocation = guiLocation;
+			}
+			
+			public Files() {}
+
+			public Files(String fileName, String fileType, String fileLocation, String guiLocation, Job job, Clients client,Files parent,
 					Date uploaded_at) {
 				super();
 				this.fileName = fileName;
 				this.fileType = fileType;
 				this.fileLocation = fileLocation;
+				this.guiLocation = guiLocation;
 				this.job = job;
 				this.client = client;
 				this.uploaded_at = uploaded_at;
+				this.parent = parent;
 			}
 		    
 	}

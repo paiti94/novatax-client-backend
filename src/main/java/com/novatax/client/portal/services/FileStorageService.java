@@ -42,36 +42,77 @@ public class FileStorageService {
 	        }
 	    }
 
-	    public String storeFile(MultipartFile file, Integer jobId, Integer clientId, String fileType) throws Exception {
+
+	    public String storeFile(MultipartFile file, Integer jobId, Integer clientId, String fileType, String guiLocation, Integer parentId) throws Exception {
 	        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
 	        Job job = null;
 	        Clients client = null;
+	        Files parent = null;
+
 	        if (fileName.contains("..")) {
 	            throw new Exception("Filename contains invalid path sequence " + fileName);
 	        }
 
 	        Path targetLocation = this.fileStorageLocation.resolve(fileName);
 	        java.nio.file.Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-	        
+
 	        if (jobId != null) {
-	            job = jobRepository.findById(jobId).orElse(job);
+	            job = jobRepository.findById(jobId).orElse(null);
 	            if (job == null) {
 	                throw new Exception("Job ID " + jobId + " not found");
 	            }
 	        }
 	        if (clientId != null) {
-	            client = clientRepository.findById(clientId).orElse(client);
+	            client = clientRepository.findById(clientId).orElse(null);
 	            if (client == null) {
 	                throw new Exception("Client ID " + clientId + " not found");
 	            }
 	        }
-	        
-	        Files fileRecord = new Files(fileName, fileType, targetLocation.toString(), job, client, new Date());
-	       
+	        if (parentId != null) {
+	            parent = fileRepository.findById(parentId).orElse(null);
+	            if (parent == null) {
+	                throw new Exception("Parent folder ID " + parentId + " not found");
+	            }
+	        }
 
+	        Files fileRecord = new Files(fileName, fileType, targetLocation.toString(), guiLocation, job, client, parent, new Date());
 	        fileRepository.save(fileRecord);
 
 	        return fileName;
+	    }
+	    
+	    public String storeFolder(String folderName, Integer jobId, Integer clientId, String guiLocation, Integer parentId) throws Exception {
+	        Job job = null;
+	        Clients client = null;
+	        Files parent = null;
+
+	        if (jobId != null) {
+	            job = jobRepository.findById(jobId).orElse(null);
+	            if (job == null) {
+	                throw new Exception("Job ID " + jobId + " not found");
+	            }
+	        }
+	        if (clientId != null) {
+	            client = clientRepository.findById(clientId).orElse(null);
+	            if (client == null) {
+	                throw new Exception("Client ID " + clientId + " not found");
+	            }
+	        }
+	        if (parentId != null) {
+	            parent = fileRepository.findById(parentId).orElse(null);
+	            if (parent == null) {
+	                throw new Exception("Parent folder ID " + parentId + " not found");
+	            }
+	        }
+
+	        boolean folderExists = fileRepository.existsByClientIdAndGuiLocation(clientId, guiLocation);
+	        if (!folderExists) {
+	            Files fileRecord = new Files(folderName, "folder", null, guiLocation, job, client, parent, new Date());
+	            fileRepository.save(fileRecord);
+	            return folderName;
+	        }
+
+	        return "the folder is already existing";
 	    }
 
 	    public Path loadFile(String fileName) {

@@ -81,7 +81,7 @@ public class UserController {
 	    }
 	    
 	    @GetMapping("/users/map")
-	    public String mapUserWithClient() {
+	    public String mapUserWithClient() throws Exception {
 	    	this.userService.fetchUsers();
 	    	return "mapping is completed";
 	    }
